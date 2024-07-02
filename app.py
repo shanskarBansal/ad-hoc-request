@@ -126,7 +126,7 @@ def app_first_block():
                 pass
         profile_type_df = pd.DataFrame(
             np.column_stack([final_profile_link, final_profile_name, final_profile_page_level, final_profile_type, final_profile_state, final_profile_party]),
-            columns=['Username', 'Names', 'Page Level', 'Page Type', 'State', 'Party'])  # Updated column order
+            columns=['Username', 'Names', 'Page Level', 'Page Type', 'State', 'Party']) 
         return final_profile_link, profile_type_df, final_profile_name
 
     def response_df(ds_acc_list=None, fields_list=None, api_key=None, start_date=None, end_date=None, profile_type_df=None):
@@ -188,7 +188,6 @@ def app_first_block():
                                                                     api_key=api_key, start_date=start_date,
                                                                     end_date=end_date, profile_type_df=profile_type_df)
             print("final_df columns---", final_df.columns)
-
             final_df['Post created'] = pd.to_datetime(final_df['Post created'])
             add_time = timedelta(hours=3, minutes=30)
             final_df['Post created'] = final_df['Post created'] + add_time
@@ -473,9 +472,26 @@ def app_second_block():
             wks_write.set_dataframe(data_df, (1, 1), encoding="utf-8", fit=True)
             wks_write.frozen_rows = 1
 
-    Google_api_credential_file = st.secrets["gcp_service_account"]
+
+    Google_api_credential_dict = {
+        "type": st.secrets["gcp_service_account"]["type"],
+        "project_id": st.secrets["gcp_service_account"]["project_id"],
+        "private_key_id": st.secrets["gcp_service_account"]["private_key_id"],
+        "private_key": st.secrets["gcp_service_account"]["private_key"],
+        "client_email": st.secrets["gcp_service_account"]["client_email"],
+        "client_id": st.secrets["gcp_service_account"]["client_id"],
+        "auth_uri": st.secrets["gcp_service_account"]["auth_uri"],
+        "token_uri": st.secrets["gcp_service_account"]["token_uri"],
+        "auth_provider_x509_cert_url": st.secrets["gcp_service_account"]["auth_provider_x509_cert_url"],
+        "client_x509_cert_url": st.secrets["gcp_service_account"]["client_x509_cert_url"]
+    }
+
+    Google_api_credential_json = json.dumps(Google_api_credential_dict)
+    credentials = service_account.Credentials.from_service_account_info(json.loads(Google_api_credential_json))
     google_api_object = google_api_class(
-        credential_file=Google_api_credential_file)
+        credential_file=credentials)
+
+
 
     api_key = st.secrets["auths_tokens"]
 
