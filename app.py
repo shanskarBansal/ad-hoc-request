@@ -473,7 +473,7 @@ def app_second_block():
             wks_write.frozen_rows = 1
 
 
-    Google_api_credential_dict = = dict(st.secrets["gcp_service_account"])
+    Google_api_credential_dict = dict(st.secrets["gcp_service_account"])
 
     credentials = service_account.Credentials.from_service_account_info(Google_api_credential_dict)
     google_api_object = google_api_class(
