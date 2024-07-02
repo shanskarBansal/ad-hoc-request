@@ -88,9 +88,7 @@ def app_first_block():
             wks_write.frozen_rows = 1
 
 
-    Google_api_credential_file = st.secrets["gcp_service_account"]
-
-    # Save the credentials to a temporary file
+    Google_api_credential_file = dict(st.secrets["gcp_service_account"])
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_file:
         temp_file.write(json.dumps(Google_api_credential_file).encode())
         temp_file_path = temp_file.name
