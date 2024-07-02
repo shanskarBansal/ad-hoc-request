@@ -407,6 +407,7 @@ def app_second_block():
     import numpy as np
     from datetime import datetime, timedelta
     import gspread
+    import tempfile
     from oauth2client.service_account import ServiceAccountCredentials
 
     class google_api_class:
@@ -479,9 +480,12 @@ def app_second_block():
             wks_write.set_dataframe(data_df, (1, 1), encoding="utf-8", fit=True)
             wks_write.frozen_rows = 1
 
-    Google_api_credential_file = st.secrets["gcp_service_account"]
-    google_api_object = google_api_class(
-        credential_file=Google_api_credential_file)
+    Google_api_credential_file = dict(st.secrets["gcp_service_account"])
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_file:
+        temp_file.write(json.dumps(Google_api_credential_file).encode())
+        temp_file_path = temp_file.name
+    google_api_object = google_api_class(credential_file=temp_file_path)
 
     api_key = st.secrets["auths_tokens"]
 
