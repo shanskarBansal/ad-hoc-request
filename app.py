@@ -85,7 +85,7 @@ def app_first_block():
             wks_write.set_dataframe(data_df, (1, 1), encoding="utf-8", fit=True)
             wks_write.frozen_rows = 1
 
-    Google_api_credential_file = st.secrets["gcp_service_account"]
+    Google_api_credential_file = str(st.secrets["gcp_service_account"])
     google_api_object = google_api_class(
         credential_file=Google_api_credential_file)
 
@@ -473,7 +473,7 @@ def app_second_block():
             wks_write.set_dataframe(data_df, (1, 1), encoding="utf-8", fit=True)
             wks_write.frozen_rows = 1
 
-    Google_api_credential_file = st.secrets["gcp_service_account"]
+    Google_api_credential_file = str(st.secrets["gcp_service_account"])
     google_api_object = google_api_class(
         credential_file=Google_api_credential_file)
 
