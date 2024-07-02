@@ -1,1 +1,15 @@
-
+streamlit
+pandas
+nltk
+mtranslate
+scikit-learn
+seaborn
+matplotlib
+sentence-transformers
+gspread
+oauth2client
+google-auth
+requests
+db-dtypes
+pyarrow
+streamlit-aggrid
