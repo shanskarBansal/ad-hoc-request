@@ -13,6 +13,8 @@ def app_first_block():
     from datetime import datetime, timedelta
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
+    import tempfile
+
 
 
     class google_api_class:
@@ -85,9 +87,15 @@ def app_first_block():
             wks_write.set_dataframe(data_df, (1, 1), encoding="utf-8", fit=True)
             wks_write.frozen_rows = 1
 
+
     Google_api_credential_file = st.secrets["gcp_service_account"]
-    google_api_object = google_api_class(
-        credential_file=Google_api_credential_file)
+
+    # Save the credentials to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_file:
+        temp_file.write(json.dumps(Google_api_credential_file).encode())
+        temp_file_path = temp_file.name
+    google_api_object = google_api_class(credential_file=temp_file_path)
+
 
     api_key = st.secrets["auths_tokens"]
 
@@ -126,7 +134,7 @@ def app_first_block():
                 pass
         profile_type_df = pd.DataFrame(
             np.column_stack([final_profile_link, final_profile_name, final_profile_page_level, final_profile_type, final_profile_state, final_profile_party]),
-            columns=['Username', 'Names', 'Page Level', 'Page Type', 'State', 'Party']) 
+            columns=['Username', 'Names', 'Page Level', 'Page Type', 'State', 'Party'])  # Updated column order
         return final_profile_link, profile_type_df, final_profile_name
 
     def response_df(ds_acc_list=None, fields_list=None, api_key=None, start_date=None, end_date=None, profile_type_df=None):
@@ -188,6 +196,7 @@ def app_first_block():
                                                                     api_key=api_key, start_date=start_date,
                                                                     end_date=end_date, profile_type_df=profile_type_df)
             print("final_df columns---", final_df.columns)
+
             final_df['Post created'] = pd.to_datetime(final_df['Post created'])
             add_time = timedelta(hours=3, minutes=30)
             final_df['Post created'] = final_df['Post created'] + add_time
@@ -472,14 +481,9 @@ def app_second_block():
             wks_write.set_dataframe(data_df, (1, 1), encoding="utf-8", fit=True)
             wks_write.frozen_rows = 1
 
-
-    Google_api_credential_dict = dict(st.secrets["gcp_service_account"])
-
-    credentials = service_account.Credentials.from_service_account_info(Google_api_credential_dict)
+    Google_api_credential_file = st.secrets["gcp_service_account"]
     google_api_object = google_api_class(
-        credential_file=credentials)
-
-
+        credential_file=Google_api_credential_file)
 
     api_key = st.secrets["auths_tokens"]
 
