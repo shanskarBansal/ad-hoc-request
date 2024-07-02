@@ -143,7 +143,7 @@ def app_first_block():
 
         for count, each_acc in enumerate(ds_acc_list):
             try:
-                print(each_acc)
+                st.write(each_acc)
                 payload = {"ds_id": "IGPD2",
                         "ds_accounts": each_acc,
                         "ds_user": "111966744882904",
@@ -186,6 +186,7 @@ def app_first_block():
     from datetime import timedelta
     import pandas as pd
 
+
     def final_SM_report_df(ds_acc_list=None, api_key=None, start_date=None, end_date=None, profile_type_df=None):
         try:
             fields_list = "ig_id,post_id,post_comments,post_type,post_likes,post_caption,post_timestamp,post_media_url,post_permalink,username,name,likes_per_post,comments_per_post"
@@ -194,6 +195,7 @@ def app_first_block():
                                                                     api_key=api_key, start_date=start_date,
                                                                     end_date=end_date, profile_type_df=profile_type_df)
             print("final_df columns---", final_df.columns)
+            
 
             final_df['Post created'] = pd.to_datetime(final_df['Post created'])
             add_time = timedelta(hours=3, minutes=30)
@@ -209,23 +211,18 @@ def app_first_block():
             mask = (final_df['Post created'] >= start_date + ' 00:00:00') & (final_df['Post created'] <= end_date + ' 00:00:00')
             final_df = final_df.loc[mask]
 
-            if final_df.empty or followers_df.empty:
-                print("No data available for the specified timeline.")
-                final_sm_df = pd.DataFrame(columns=['Name', 'Names', 'Page Type', 'Page Level', 'State', 'Party', 'Profile followers',
-                                                    'Total Likes', 'Total Comments', 'Likes per post', 'Comments per post'])
-                raw_data_df_unprocessed = pd.DataFrame()
-                return final_sm_df, [], [], raw_data_df_unprocessed
-
             df_final = pd.merge(final_df, followers_df, on=merge_keys, how='outer')
             df_final['Post Count'] = 1
             df_final.loc[df_final['Post ID'].isnull(), 'Post Count'] = 0
+
 
             for column in ['Likes', 'Likes per post', 'Comments per post', 'Profile followers']:
                 df_final[column] = pd.to_numeric(df_final[column])
 
             print("df_final columns =", df_final.columns)
-
-            raw_data_df = df_final.copy()
+        
+            raw_data_df = df_final
+        #     raw_data_df = final_df.copy()
             raw_data_df.fillna(0, inplace=True)
             raw_data_df.replace('', 0, inplace=True)
             string_cols = ['Name', 'Names']
@@ -237,25 +234,28 @@ def app_first_block():
                 (raw_data_df['Interaction per post'] / raw_data_df['Profile followers']) * 100)
             raw_data_df['Engagement per post'] = raw_data_df['Engagement per post'].round(2)
 
-            df1 = df_final.groupby(['Name', 'Names', "Page Type", "Page Level", "State", "Party", 'Profile followers'], as_index=False)[['Post Count', 'Likes per post', 'Comments per post']].apply(lambda x: x.astype(int).sum())
-            df1.rename(columns={'Likes per post': 'Total Likes', 'Comments per post': 'Total Comments'}, inplace=True)
+        #     prof_type_df = df_final[['Name', 'Names', 'Page Type', 'Page Level', 'State', 'Party']]
 
+        #     print("df_final column names before grouping =", df_final.columns)
+            df1 = df_final.groupby(['Name', 'Names', "Page Type", "Page Level", "State", "Party", 'Profile followers'], as_index=False)[['Post Count', 'Likes per post', 'Comments per post']].apply(lambda x: x.astype(int).sum())
+            
+            df1.rename(columns={'Likes per post': 'Total Likes', 'Comments per post': 'Total Comments'}, inplace=True)
             cols = df_final.select_dtypes(include='object').columns
             df_final[cols] = df_final[cols].apply(pd.to_numeric, errors='coerce')
             df_final.fillna(0, inplace=True)
-            
             df2 = df_final.groupby(['Name', 'Names', "Page Type", "Page Level", "State", "Party"], as_index=False).mean()
             df2 = df2[['Name', 'Names', "Page Type", "Page Level", "State", "Party", 'Profile followers', 'Likes per post', 'Comments per post']]
 
             for key in merge_keys:
                 df1[key] = df1[key].astype(str)
                 df2[key] = df2[key].astype(str)
+                
 
             final_sm_df = pd.merge(df1, df2, on=['Name', 'Names', "Page Type", "Page Level", "State", "Party", 'Profile followers'], how='outer')
             raw_data_df_unprocessed = final_df.copy()
 
+            
             return final_sm_df, available_list, not_available_list, raw_data_df_unprocessed
-
         except Exception as e:
             print(f"Error in final_SM_report_df: {str(e)}")
             return pd.DataFrame(), [], [], pd.DataFrame()
@@ -328,7 +328,7 @@ def app_first_block():
         sheet = client.open_by_key(sheet_id)
         return sheet
         
-    st.title("INSTAGRAM   AD-HOC -- REQUEST")
+    st.title("INSTAGRAM SOCIAL MEDIA REQUEST")
 
     gsheet_name = st.text_input("Enter Google Sheet ID")
     if gsheet_name:
@@ -345,7 +345,7 @@ def app_first_block():
         if st.button("Fetch Data"):
             kar_comm_data_df = fetch_data_in_chunks(sheet_name,gsheet_name, start_date, end_date, api_key)  
             if kar_comm_data_df.empty:
-                st.write("BHAI DATA NHI HAI CHOOSEN DATE PAR")
+                st.write("No data available for the period")
             else:         
                 kar_comm_data_df['Posts'] = 1
                 kar_comm_data_df['Likes'] = pd.to_numeric(kar_comm_data_df['Likes'], errors='coerce').fillna(0)
@@ -543,7 +543,7 @@ def app_second_block():
         for count, each_acc in enumerate(ds_acc_list):
 
             try:
-                print(each_acc)
+                st.write(each_acc)
                 payload = {"ds_id": "FBPD",
                         "ds_accounts": each_acc,
                         "ds_user": "engineering@varaheanalytics.com",
@@ -740,7 +740,7 @@ def app_second_block():
         sheet = client.open_by_key(sheet_id)
         return sheet
         
-    st.title("FACEBOOK  AD-HOC -- REQUEST")
+    st.title("FACEBOOK SOCIAL MEDIA REQUEST")
 
     gsheet_name = st.text_input("Enter Google Sheet ID")
     if gsheet_name:
@@ -757,7 +757,7 @@ def app_second_block():
         if st.button("Fetch Data"):
             kar_comm_data_df = fetch_data_in_chunks(sheet_name,gsheet_name, start_date, end_date, api_key)  
             if kar_comm_data_df.empty:
-                st.write("BHAI DATA NHI HAI CHOOSEN DATE PAR")
+                st.write("No data available for the period")
             else:
                 google_api_object.write_to_gsheet(spreadsheet_id= gsheet_name ,sheet_name="FB_raw_data",data_df=kar_comm_data_df)
                 st.write("FACEBOOK RAW DATA SHEET  IS CREATED") 
