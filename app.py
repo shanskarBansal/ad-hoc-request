@@ -486,8 +486,8 @@ def app_second_block():
         "client_x509_cert_url": st.secrets["gcp_service_account"]["client_x509_cert_url"]
     }
 
-    Google_api_credential_json = json.dumps(Google_api_credential_dict)
-    credentials = service_account.Credentials.from_service_account_info(json.loads(Google_api_credential_json))
+    
+    credentials = service_account.Credentials.from_service_account_info(Google_api_credential_dict)
     google_api_object = google_api_class(
         credential_file=credentials)
 
