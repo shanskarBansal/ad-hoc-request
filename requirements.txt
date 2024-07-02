@@ -1,5 +1,11 @@
+google-auth-oauthlib
+google-auth-httplib2 
+google-api-python-client 
+pygsheets 
+pandas 
+numpy 
+requests
 streamlit
-pandas
 nltk
 mtranslate
 scikit-learn
@@ -9,8 +15,6 @@ sentence-transformers
 gspread
 oauth2client
 google-auth
-google-api-python-client
-requests
 db-dtypes
 pyarrow
 streamlit-aggrid
