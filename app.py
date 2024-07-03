@@ -807,6 +807,387 @@ def app_second_block():
     else:
         st.write("Please Enter a Valid Google Sheet_Id")
 
+def app_third_block():
+    import streamlit as st
+    import google.auth
+    from googleapiclient.discovery import build
+    import requests
+    import json
+    import pandas as pd
+    from google.oauth2 import service_account
+    import pandas as pd
+    import pygsheets
+    import gspread
+    import numpy as np
+    from datetime import datetime,timedelta
+    import seaborn as sns
+    from oauth2client.service_account import ServiceAccountCredentials
+    from googleapiclient.discovery import build
+    import tempfile
+
+
+    def get_gspread_client():
+        creds = service_account.Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=["https://www.googleapis.com/auth/spreadsheets"]
+            )
+        client = gspread.authorize(creds)
+        return client
+            
+    def get_sheet_data(sheet_id):
+        client = get_gspread_client()
+        sheet = client.open_by_key(sheet_id)
+        return sheet
+            
+    st.title("YOUTUBE SOCIAL MEDIA REQUEST")
+    spreadsheet_id = st.text_input("Enter Google Sheet ID")
+        
+    if spreadsheet_id:
+        sheet = get_sheet_data(spreadsheet_id)
+        sheet_names = [worksheet.title for worksheet in sheet.worksheets()] 
+
+    if spreadsheet_id:
+        sheet_name = st.selectbox("Select Sheet Name", options=sheet_names)
+        today_date = datetime.today().date()
+        start_date = str(st.date_input("Start Date", value=today_date))
+        end_date = str(st.date_input("End Date", value=today_date))
+
+        user_channel_id = st.text_input("Enter YouTube-Channel-ID using { https://commentpicker.com/youtube-channel-id.php }")
+
+        if st.button("Fetch Data"):
+            raw_sheet_name = 'Youtube_Channel report'
+            agg_sheet_name = 'Youtube_Video wise report'
+            class google_api_class:
+                def __init__(self, credential_file=None):
+                    """
+                    initializing google api class with parameters from configurations file
+                    :return: none
+                    """
+                    self.credentials = credential_file
+                    self.gapi_service = self.initialize_gapi_services()
+
+                def initialize_gapi_services(self):
+                    """
+                    initializing google api services to connect the excel endpoint
+                    :return: api instance
+                    """
+                    SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+                    SERVICE_ACCOUNT_FILE = self.credentials
+                    gapi_credentials = service_account.Credentials.from_service_account_file(
+                        SERVICE_ACCOUNT_FILE, scopes=SCOPES
+                    )
+                    service = build("sheets", "v4", credentials=gapi_credentials)
+                    sheet = service.spreadsheets()
+                    return sheet
+
+                def append_google_sheets(self, data=None, spreadsheet_id = None,sub_sheet_name=None, sheet_range=None):
+                    request = self.initialize_gapi_services().values().append(
+                        spreadsheetId=spreadsheet_id,
+                        range=sub_sheet_name + "!" + sheet_range,
+                        valueInputOption="USER_ENTERED",
+                        body={"values": data.values.tolist()},
+                    )
+                    request.execute()
+                    pass
+                
+                def read_sheet(self, sheet_range=None, sheet_name=None, sheet_id=None):
+                    """
+                    This function is used to get data from a google sheet
+                    :param sheet_id: sheet_id of the google spreadsheet
+                    :param sheet_range: range from which data is to be read
+                    :param sheet_name: name of the sub sheet in the google sheet from where data is to be read
+                    :return: list of lists
+                    """
+                    request = (
+                        self.gapi_service.values()
+                        .get(spreadsheetId=sheet_id, range=sheet_name + "!" + sheet_range)
+                        .execute()
+                    )
+                    values = request.get("values", [])
+                    resp_df = pd.DataFrame(data=values, columns=values[0])
+                    resp_df = resp_df.iloc[1:, :]
+                    return resp_df
+
+                def write_to_gsheet(self, spreadsheet_id=None, sheet_name=None, data_df=None):
+                    """
+                    this function takes data_df and writes it under spreadsheet_id
+                    and sheet_name using your credentials under service_file_path
+                    """
+                    service_file_path = self.credentials
+                    gc = pygsheets.authorize(service_file=service_file_path)
+                    sh = gc.open_by_key(spreadsheet_id)
+                    # print(sh)
+                    try:
+                        sh.add_worksheet(sheet_name)
+                        # print("Success")
+                    except:
+                        pass
+                    wks_write = sh.worksheet_by_title(sheet_name)
+                    wks_write.clear("A1", None, "*")
+                    wks_write.set_dataframe(data_df, (1, 1), encoding="utf-8", fit=True)
+                    wks_write.frozen_rows = 1
+
+            Google_api_credential_file = dict(st.secrets["gcp_service_account"])
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_file:
+                temp_file.write(json.dumps(Google_api_credential_file).encode())
+                temp_file_path = temp_file.name
+            google_api_object = google_api_class(credential_file=temp_file_path)
+
+            def input_df(sheet_name=None, sheet_id=None):
+                profile_df = google_api_object.read_sheet(sheet_range='A1:AZ30000', sheet_name=sheet_name, sheet_id=sheet_id)
+                profile_df_list = profile_df["Youtube Link"].values.tolist()
+                profile_df_list = [link for link in profile_df_list if link]  
+                return profile_df_list
+
+            def get_channel_ids(urls, api_key):
+                channel_id_dict = {}
+                for channel_name in urls:
+                    service = build('youtube', 'v3', developerKey=api_key)
+                    request = service.search().list(
+                        type='channel',
+                        q=channel_name, 
+                        part='id',
+                        maxResults=1
+                    )
+                    response = request.execute()
+                    try:
+                        channel_id = response['items'][0]['id']['channelId']
+                        channel_id_dict[channel_name] = channel_id
+                    except Exception as e:
+                        # print(f"Unable to get channel id for {channel_name} - {str(e)}")
+                        st.write(f"PLEASE ENTER THE CORRECT CHANNEL LINK FOR {channel_name} IN THE SHEET")
+
+                return list(channel_id_dict.values())
+
+            # api_key = 'AIzaSyBelnVoRK5kbUEkHra-e-UnXO0BWQ25d4k'
+            api_key = st.secrets["yut_tokens"]
+            urls = input_df(sheet_name,spreadsheet_id)
+            # print(urls)
+            if user_channel_id:
+                channel_ids = [user_channel_id]
+            else:
+                channel_ids = get_channel_ids(urls, api_key)
+                # print(channel_ids)
+            youtube = build('youtube', 'v3', developerKey=api_key)
+
+
+            def get_channel_stats(youtube, channel_ids):
+                all_data = []
+                request = youtube.channels().list(
+                            part='snippet,contentDetails,statistics',
+                            id=','.join(channel_ids))
+                response = request.execute() 
+                
+                for i in range(len(response['items'])):
+                    url = response['items'][i]['snippet']['customUrl'].split('@')
+                    data = dict(Channel_name = response['items'][i]['snippet']['title'],
+                                Channel_Description = response['items'][i]['snippet']['description'],
+                                Channel_link = 'https://www.youtube.com/c/'+url[1],
+                                Channel_Published_At = response['items'][i]['snippet']['publishedAt'],
+                                Subscribers = response['items'][i]['statistics']['subscriberCount'],
+                                Views = response['items'][i]['statistics']['viewCount'],
+                                Total_videos = response['items'][i]['statistics']['videoCount'],
+                                playlist_id = response['items'][i]['contentDetails']['relatedPlaylists']['uploads'])
+                    all_data.append(data)
+                
+                return all_data
+
+            def get_video_ids(youtube, playlist_id):
+                
+                request = youtube.playlistItems().list(
+                            part='contentDetails',
+                            playlistId = playlist_id,
+                            maxResults = 50)
+                response = request.execute()
+                
+                video_ids = []
+                
+                for i in range(len(response['items'])):
+                    video_ids.append(response['items'][i]['contentDetails']['videoId'])
+                    
+                next_page_token = response.get('nextPageToken')
+                more_pages = True
+                
+                while more_pages:
+                    if next_page_token is None:
+                        more_pages = False
+                    else:
+                        request = youtube.playlistItems().list(
+                                    part='contentDetails',
+                                    playlistId = playlist_id,
+                                    maxResults = 50,
+                                    pageToken = next_page_token)
+                        response = request.execute()
+                
+                        for i in range(len(response['items'])):
+                            video_ids.append(response['items'][i]['contentDetails']['videoId'])
+                        
+                        next_page_token = response.get('nextPageToken')
+                    
+                return video_ids
+
+
+            def get_video_details(youtube, video_ids):
+                all_video_stats = []
+                
+                for i in range(0, len(video_ids), 50):
+                    request = youtube.videos().list(
+                                part='snippet,statistics',
+                                id=','.join(video_ids[i:i+50]))
+                    response = request.execute()
+                    
+                    for video in response['items']:
+                        try:
+                            tags_temp = ','.join(video['snippet']['tags'])
+                        except Exception:
+                            tags_temp = ''
+                        try:
+                            lang = video['snippet']['defaultAudioLanguage']
+                        except Exception:
+                            lang = ''
+                        try:
+                            commentCount = video['statistics']['commentCount']
+                        except Exception:
+                            commentCount = ''
+                        try:
+                            likeCount = video['statistics']['likeCount']
+                        except Exception:
+                            likeCount = ''
+                        try:
+                            viewCount = video['statistics']['viewCount']
+                        except Exception:
+                            viewCount = ''
+                        try:
+                            liveBroadcastContent = video['snippet']['liveBroadcastContent']
+                        except Exception:
+                            liveBroadcastContent = ''
+                        try:
+                            channelTitle = video['snippet']['channelTitle']
+                        except Exception:
+                            channelTitle = ''
+                        try:
+                            title = video['snippet']['title']
+                        except Exception:
+                            title = ''
+                        try:
+                            description = video['snippet']['description']
+                        except Exception:
+                            description = ''
+                        try:
+                            publishedAt = video['snippet']['publishedAt']
+                        except Exception:
+                            publishedAt = ''
+                        try:
+                            vid_id = video['id']
+                        except Exception:
+                            vid_id = ''
+                        try:
+                            kind = video['kind']
+                        except Exception:
+                            kind = ''
+
+                        try:
+                            hashtag = []
+                            textList = description.split()
+                            for i in textList:
+                                if(i[0]=="#"):
+                                    hashtag.append(i)
+                            hashtag = ''.join(hashtag)
+                        except Exception:
+                            hashtag = ''
+
+
+                        video_stats = dict(Channel = channelTitle,
+                                        Title = title,
+                                        Description = description,
+                                        Published_date = publishedAt,
+                                        Video_ID = vid_id,
+                                        Video_link = 'https://www.youtube.com/watch?v=' + str(vid_id),
+                                        Video_type = kind,
+                                        Views = viewCount,
+                                        Likes = likeCount,
+                                        Comments = commentCount,
+                                        Tags = tags_temp,
+                                        defaultAudioLanguage = lang,
+                                        liveBroadcastContent =liveBroadcastContent,
+                                        hashtag = hashtag
+                                        )
+                        all_video_stats.append(video_stats)
+                
+                return all_video_stats
+
+
+            channel_statistics = get_channel_stats(youtube, channel_ids)
+            channel_data = pd.DataFrame(channel_statistics)
+            channel_data['Channel_Published_At'] = pd.to_datetime(channel_data['Channel_Published_At'], errors='coerce', utc=True)
+            channel_data['Channel_Published_At'] = channel_data['Channel_Published_At'].dt.date
+            channel_data['Subscribers'] = pd.to_numeric(channel_data['Subscribers'], errors='coerce')
+            channel_data['Views'] = pd.to_numeric(channel_data['Views'], errors='coerce')
+            channel_data['Total_videos'] = pd.to_numeric(channel_data['Total_videos'], errors='coerce')
+
+            lists = channel_data['Channel_name'].tolist()
+
+            all_playlist_id = []
+            for i in channel_data['Channel_name']:
+                each_playlist_id = channel_data.loc[channel_data['Channel_name']==i, 'playlist_id'].iloc[0]
+                all_playlist_id.append(each_playlist_id)
+
+
+            all_video_ids = []
+            for count,item in enumerate(all_playlist_id):
+                video_ids = get_video_ids(youtube, item)
+                all_video_ids.append(video_ids)
+
+
+            all_video_details = []
+            for count,item in enumerate(all_video_ids):
+                video_details = get_video_details(youtube, item)
+                all_video_details.append(video_details)
+
+            all_video_details = [pd.DataFrame(item) if isinstance(item, list) else item for item in all_video_details]
+
+            df_temp = pd.concat(all_video_details, ignore_index=True)
+            df_temp['Channel'].unique()
+            df_temp['Published_date'] = pd.to_datetime(df_temp['Published_date']).dt.date
+            df_temp['Published_date'] = pd.to_datetime(df_temp['Published_date'])
+            df_temp = df_temp[(df_temp['Published_date'] >= start_date) & (df_temp['Published_date'] <= end_date)]
+
+
+            df_temp['Views'] = pd.to_numeric(df_temp['Views'], errors='coerce')
+            df_temp['Likes'] = pd.to_numeric(df_temp['Likes'], errors='coerce')
+            df_temp['Comments'] = pd.to_numeric(df_temp['Comments'], errors='coerce')
+
+            channel_data['Subscribers'] = pd.to_numeric(channel_data['Subscribers'], errors='coerce')
+            channel_data['Views'] = pd.to_numeric(channel_data['Views'], errors='coerce')
+
+            temp_grouped = df_temp.groupby('Channel').agg({
+                'Views': 'sum',
+                'Likes': 'sum',
+                'Comments': 'sum',
+                'Video_ID': pd.Series.nunique
+            }).reset_index()
+
+            consolidated_data = pd.merge(channel_data, temp_grouped, left_on='Channel_name', right_on='Channel', how='left')
+
+            consolidated_data['Views_x'] = np.where(
+                consolidated_data[['Likes', 'Comments', 'Video_ID']].isnull().any(axis=1),
+                np.nan,
+                consolidated_data['Views_x']
+            )
+
+            final_df = consolidated_data[['Channel_name', 'Subscribers', 'Views_y', 'Likes', 'Comments', 'Video_ID']]
+            final_df.columns = ['Channel', 'Subscribers', 'Sum of Views', 'Sum of Likes', 'Sum of Comments', 'Unique Video_ID Count']
+            # print(final_df)
+
+            def update_sheet(raw_df = None,agg_df = None,google_api_object = None,raw_sheet_name = None,agg_sheet_name = None,spreadsheet_id = None):
+                google_api_object.write_to_gsheet(spreadsheet_id=spreadsheet_id, sheet_name=raw_sheet_name, data_df=raw_df)
+                google_api_object.write_to_gsheet(spreadsheet_id=spreadsheet_id, sheet_name=agg_sheet_name, data_df=agg_df)
+                st.write('Youtube Social Media Report Generated')
+
+            update_sheet(raw_df = final_df,agg_df = df_temp,google_api_object = google_api_object,raw_sheet_name = raw_sheet_name,agg_sheet_name = agg_sheet_name,spreadsheet_id = spreadsheet_id)
+            google_api_object.write_to_gsheet(sheet_name="Channel_data",spreadsheet_id=spreadsheet_id,data_df=channel_data)
+            st.write('Channel Data Report Generated')
+
 def main():
     if 'selected_function' not in st.session_state:
         st.session_state.selected_function = None
@@ -814,7 +1195,7 @@ def main():
     with st.sidebar:
         option = st.radio(
             "Select which function you want to run:",
-            ('INSTAGRAM_AD-HOC', 'FACEBOOK_AD-HOC'),
+            ('INSTAGRAM_AD-HOC', 'FACEBOOK_AD-HOC','YOUTUBE_AD_HOC'),
             on_change=lambda: st.session_state.update({"selected_function": None})
         )
 
@@ -839,6 +1220,8 @@ def main():
         app_first_block()
     elif st.session_state.selected_function == 'FACEBOOK_AD-HOC':
         app_second_block()
+    elif st.session_state.selected_function == 'YOUTUBE_AD_HOC':
+        app_third_block()
 
 if __name__ == "__main__":
     main()
