@@ -1,48 +1,48 @@
 import streamlit as st
 import streamlit.components.v1 as components
-st.markdown("""
-    <style>
-    .main {
-        padding: 20px;
-    }
-    .reportview-container .main .block-container {
-        padding-top: 2rem;
-        padding-right: 2rem;
-        padding-left: 2rem;
-        padding-bottom: 2rem;
-    }
-    .stButton button {
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 5px;
-        padding: 0.5rem 1rem;
-        border: none;
-        cursor: pointer;
-        font-size: 1rem;
-    }
-    .stButton button:hover {
-        background-color: #45a049;
-    }
-    .stTextInput>div>div>input {
-        border: 2px solid #ccc;
-        border-radius: 5px;
-        padding: 10px;
-    }
-    .stTextArea textarea {
-        border: 2px solid #ccc;
-        border-radius: 5px;
-        padding: 10px;
-    }
-    .sidebar .sidebar-content {
-        background-color: #f8f9fa;
-        padding: 20px;
-    }
-    .stRadio label {
-        font-size: 1rem;
-        margin: 0.5rem 0;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# st.markdown("""
+#     <style>
+#     .main {
+#         padding: 20px;
+#     }
+#     .reportview-container .main .block-container {
+#         padding-top: 2rem;
+#         padding-right: 2rem;
+#         padding-left: 2rem;
+#         padding-bottom: 2rem;
+#     }
+#     .stButton button {
+#         background-color: #4CAF50;
+#         color: white;
+#         border-radius: 5px;
+#         padding: 0.5rem 1rem;
+#         border: none;
+#         cursor: pointer;
+#         font-size: 1rem;
+#     }
+#     .stButton button:hover {
+#         background-color: #45a049;
+#     }
+#     .stTextInput>div>div>input {
+#         border: 2px solid #ccc;
+#         border-radius: 5px;
+#         padding: 10px;
+#     }
+#     .stTextArea textarea {
+#         border: 2px solid #ccc;
+#         border-radius: 5px;
+#         padding: 10px;
+#     }
+#     .sidebar .sidebar-content {
+#         background-color: #f8f9fa;
+#         padding: 20px;
+#     }
+#     .stRadio label {
+#         font-size: 1rem;
+#         margin: 0.5rem 0;
+#     }
+#     </style>
+#     """, unsafe_allow_html=True)
 
 def app_first_block():
     import streamlit as st
