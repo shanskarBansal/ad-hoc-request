@@ -823,17 +823,66 @@ def app_third_block():
     import seaborn as sns
     from oauth2client.service_account import ServiceAccountCredentials
     from googleapiclient.discovery import build
+    import streamlit.components.v1 as components
     import tempfile
+
+
+    # Custom CSS to style the app
+    st.markdown("""
+        <style>
+        .main {
+            padding: 20px;
+        }
+        .reportview-container .main .block-container {
+            padding-top: 2rem;
+            padding-right: 2rem;
+            padding-left: 2rem;
+            padding-bottom: 2rem;
+        }
+        .stButton button {
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .stButton button:hover {
+            background-color: #45a049;
+        }
+        .stTextInput>div>div>input {
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .stTextArea textarea {
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .sidebar .sidebar-content {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .stRadio label {
+            font-size: 1rem;
+            margin: 0.5rem 0;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
 
 
     def get_gspread_client():
         creds = service_account.Credentials.from_service_account_info(
             st.secrets["gcp_service_account"],
             scopes=["https://www.googleapis.com/auth/spreadsheets"]
-            )
+        )
         client = gspread.authorize(creds)
         return client
-            
+
+        
     def get_sheet_data(sheet_id):
         client = get_gspread_client()
         sheet = client.open_by_key(sheet_id)
@@ -858,6 +907,7 @@ def app_third_block():
             raw_sheet_name = 'Youtube_Channel report'
             agg_sheet_name = 'Youtube_Video wise report'
             class google_api_class:
+                
                 def __init__(self, credential_file=None):
                     """
                     initializing google api class with parameters from configurations file
@@ -866,6 +916,7 @@ def app_third_block():
                     self.credentials = credential_file
                     self.gapi_service = self.initialize_gapi_services()
 
+            
                 def initialize_gapi_services(self):
                     """
                     initializing google api services to connect the excel endpoint
@@ -880,6 +931,7 @@ def app_third_block():
                     sheet = service.spreadsheets()
                     return sheet
 
+                
                 def append_google_sheets(self, data=None, spreadsheet_id = None,sub_sheet_name=None, sheet_range=None):
                     request = self.initialize_gapi_services().values().append(
                         spreadsheetId=spreadsheet_id,
@@ -890,6 +942,7 @@ def app_third_block():
                     request.execute()
                     pass
                 
+            
                 def read_sheet(self, sheet_range=None, sheet_name=None, sheet_id=None):
                     """
                     This function is used to get data from a google sheet
@@ -908,6 +961,8 @@ def app_third_block():
                     resp_df = resp_df.iloc[1:, :]
                     return resp_df
 
+
+            
                 def write_to_gsheet(self, spreadsheet_id=None, sheet_name=None, data_df=None):
                     """
                     this function takes data_df and writes it under spreadsheet_id
@@ -933,12 +988,13 @@ def app_third_block():
                 temp_file_path = temp_file.name
             google_api_object = google_api_class(credential_file=temp_file_path)
 
+
             def input_df(sheet_name=None, sheet_id=None):
                 profile_df = google_api_object.read_sheet(sheet_range='A1:AZ30000', sheet_name=sheet_name, sheet_id=sheet_id)
                 profile_df_list = profile_df["Youtube Link"].values.tolist()
                 profile_df_list = [link for link in profile_df_list if link]  
                 return profile_df_list
-
+        
             def get_channel_ids(urls, api_key):
                 channel_id_dict = {}
                 for channel_name in urls:
@@ -959,7 +1015,6 @@ def app_third_block():
 
                 return list(channel_id_dict.values())
 
-            # api_key = 'AIzaSyBelnVoRK5kbUEkHra-e-UnXO0BWQ25d4k'
             api_key = st.secrets["yut_tokens"]
             urls = input_df(sheet_name,spreadsheet_id)
             # print(urls)
@@ -970,7 +1025,7 @@ def app_third_block():
                 # print(channel_ids)
             youtube = build('youtube', 'v3', developerKey=api_key)
 
-
+        
             def get_channel_stats(youtube, channel_ids):
                 all_data = []
                 request = youtube.channels().list(
@@ -992,6 +1047,7 @@ def app_third_block():
                 
                 return all_data
 
+        
             def get_video_ids(youtube, playlist_id):
                 
                 request = youtube.playlistItems().list(
@@ -1026,7 +1082,7 @@ def app_third_block():
                     
                 return video_ids
 
-
+        
             def get_video_details(youtube, video_ids):
                 all_video_stats = []
                 
