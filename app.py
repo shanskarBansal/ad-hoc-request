@@ -592,6 +592,7 @@ def app_second_block():
                                                                 api_key=api_key, start_date=start_date,
                                                                 end_date=end_date, profile_type_df=profile_type_df,
                                                                 profile_name=profile_name)
+        print(final_df.columns)
 
         final_df['Created time'] = pd.to_datetime(final_df['Created time'])
         add_time = timedelta(hours=3, minutes=30)
