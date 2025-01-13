@@ -771,6 +771,7 @@ def app_second_block():
                 kar_comm_data_df['Page followers'] = pd.to_numeric(kar_comm_data_df['Page followers'], errors='coerce').fillna(0)
 
                 aggregated_data = kar_comm_data_df.groupby('Name').agg({
+                    'Name (Profile)': 'first',
                     'Page Level': 'first',
                     'Page Type': 'first',
                     'State': 'first',
