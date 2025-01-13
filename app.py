@@ -683,7 +683,7 @@ def app_second_block():
         # Surrogate_df = final_sm_df.loc[final_sm_df['Profile Type'] == 'Surrogate']
 
         final_sm_df.drop("Name (Profile)", inplace=True, axis=1)
-        raw_data_df.drop("Name (Profile)", inplace=True, axis=1)
+        # raw_data_df.drop("Name (Profile)", inplace=True, axis=1)
 
         return final_sm_df, available_list, not_available_list, raw_data_df
 
