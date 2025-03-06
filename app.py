@@ -993,7 +993,7 @@ def app_third_block():
 
 
             def input_df(sheet_name=None, sheet_id=None):
-                profile_df = google_api_object.read_sheet(sheet_range='A1:AZ30000', sheet_name=sheet_name, sheet_id=sheet_id)
+                profile_df = google_api_object.read_sheet(sheet_range='A1:AZ300', sheet_name=sheet_name, sheet_id=sheet_id)
                 profile_df_list = profile_df["Youtube Link"].values.tolist()
                 profile_df_list = [link for link in profile_df_list if link]  
                 return profile_df_list
